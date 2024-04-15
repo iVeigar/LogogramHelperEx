@@ -1,9 +1,9 @@
 {
-    "Name": "Logogram Helper",
-    "Author": "apetih",
+    "Name": "Logogram Helper Ex (CN)",
+    "Author": "apetih, iVeigar",
     "Punchline": "Helper plugin for Eureka's Logos Actions.",
-    "Description": "Shows amounts of possible combinations for Eureka's Logos Actions upon entering the Logos Manipulator.",
-    "RepoUrl": "https://github.com/apetih/LogogramHelper",
+    "Description": "Shows amounts of possible combinations for Eureka's Logos Actions upon entering the Logos Manipulator and automatically puts them into array.",
+    "RepoUrl": "https://github.com/iVeigar/LogogramHelperEx-CN",
     "ApplicableVersion": "any",
     "Tags": [
         "eureka",
@@ -12,5 +12,5 @@
     "CategoryTags": [
         "utility"
     ],
-    "IconUrl": "https://raw.githubusercontent.com/apetih/LogogramHelper/master/res/img/logoslogo.png"
+    "IconUrl": "https://raw.githubusercontent.com/iVeigar/LogogramHelperEx-CN/master/res/img/logoslogo.png"
 }

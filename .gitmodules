@@ -1,0 +1,6 @@
+[submodule "ClickLib"]
+	path = ClickLib
+	url = https://github.com/iVeigar/ClickLib.git
+[submodule "ECommons"]
+	path = ECommons
+	url = https://github.com/NightmareXIV/ECommons.git

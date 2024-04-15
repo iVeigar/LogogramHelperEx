@@ -13,11 +13,10 @@ using LogogramHelperEx.Util;
 
 namespace LogogramHelperEx.Windows;
 
-public class MainWindow : Window, IDisposable
+public sealed class MainWindow : Window, IDisposable
 {
     private Plugin Plugin { get; }
-    private List<LogosAction> LogosActions { get; }
-
+    private List<LogosActionInfo> LogosActions { get; }
     public MainWindow(Plugin plugin) : base(
         "文理技能", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.AlwaysAutoResize)
     {
@@ -105,11 +104,12 @@ public class MainWindow : Window, IDisposable
             }
         }
         ImGui.SameLine();
-        using (ImRaii.Disabled(!ImGui.GetIO().KeyCtrl))
+        using (ImRaii.Disabled(groups.Count == 0 || currentActionSetGroupTab == -1 || !ImGui.GetIO().KeyCtrl))
         {
             if (ImGui.Button("删除当前展示的分类"))
             {
                 groups.RemoveAt(currentActionSetGroupTab);
+                currentActionSetGroupTab = -1;
                 save = true;
             }
         }
@@ -156,7 +156,9 @@ public class MainWindow : Window, IDisposable
             ImGui.TableNextColumn();
             for (var i = 0; i < group.Sets.Count; i++)
             {
-                save |= DrawActionSetEditer(group.Sets, i);
+                ImGui.PushID(i);
+                save |= DrawActionSetRow(group.Sets, i);
+                ImGui.PopID();
                 if(i < group.Sets.Count - 1)
                 {
                     ImGui.TableNextColumn();
@@ -176,36 +178,30 @@ public class MainWindow : Window, IDisposable
         return save;
     }
 
-    private bool DrawActionSetEditer(List<ActionSet> actionSets, int actionSetIndex)
+    private bool DrawActionSetRow(List<ActionSet> actionSets, int index)
     {
-        ImGui.PushID(actionSetIndex);
         var save = false;
-        var (selectedActionIndex1, selectedRecipeIndex1) = actionSets[actionSetIndex].MagiaAction1;
-        var (selectedActionIndex2, selectedRecipeIndex2) = actionSets[actionSetIndex].MagiaAction2;
-        DrawActionSetIcons(selectedActionIndex1, selectedActionIndex2);
+        var actionSet = actionSets[index];
+
+        DrawActionSetIcons(actionSet);
         ImGui.TableNextColumn();
+
         ImGui.PushID(1);
-        if (DrawRecipeSelector(ref selectedActionIndex1, ref selectedRecipeIndex1))
-        {
-            actionSets[actionSetIndex].MagiaAction1 = (selectedActionIndex1, selectedRecipeIndex1);
-            save = true;
-        }
+        save |= DrawRecipeSelector(actionSet.ActionRecipe1);
         ImGui.PopID();
         ImGui.PushID(2);
-        if (DrawRecipeSelector(ref selectedActionIndex2, ref selectedRecipeIndex2))
-        {
-            actionSets[actionSetIndex].MagiaAction2 = (selectedActionIndex2, selectedRecipeIndex2);
-            save = true;
-        }
+        save |= DrawRecipeSelector(actionSet.ActionRecipe2);
         ImGui.PopID();
         ImGui.TableNextColumn();
-        save |= DrawActionSetOperators(actionSets, actionSetIndex);
-        ImGui.PopID();
+
+        save |= DrawActionSetOperator(actionSets, index);
         return save;
     }
 
-    private void DrawActionSetIcons(int action1, int action2)
+    private void DrawActionSetIcons(ActionSet actionSet)
     {
+        var action1 = actionSet.ActionRecipe1.ActionIndex;
+        var action2 = actionSet.ActionRecipe2.ActionIndex;
         if (action1 <= 0 && action2 <= 0)
             return;
         var bg = new Vector4(0.5f, 0.5f, 0.5f, 1.0f);
@@ -237,64 +233,58 @@ public class MainWindow : Window, IDisposable
         }
     }
 
-    private string actionSetEditerFilter = "";
-    private bool DrawRecipeSelector(ref int prevActionIndex, ref int prevRecipeIndex)
+    private string actionNameFilter = "";
+    private bool DrawRecipeSelector(ActionRecipe currentActionRecipe)
     {
-        var action = LogosActions[prevActionIndex];
         var changed = false;
-        
+        var action = LogosActions[currentActionRecipe.ActionIndex];
         ImGui.SetNextItemWidth(80.0f * fontScaling);
-        if (ImGui.BeginCombo("###action", action.Name, ImGuiComboFlags.HeightLargest))
+        if (ImGui.BeginCombo("##SelectAction", action.Name, ImGuiComboFlags.HeightLargest))
         {
             ImGui.SetNextItemWidth(70.0f * fontScaling);
-            ImGui.InputTextWithHint("", "搜索", ref actionSetEditerFilter, 50, ImGuiInputTextFlags.AutoSelectAll);
-            ImGui.BeginChild("###LogogramHelperExComboChild", new Vector2(0, 105 * ImGuiHelpers.GlobalScale), true);
+            ImGui.InputTextWithHint("", "搜索", ref actionNameFilter, 50, ImGuiInputTextFlags.AutoSelectAll);
+            ImGui.BeginChild("##SelectActionChild", new Vector2(0, 105 * ImGuiHelpers.GlobalScale), true);
             var closePopup = false;
             for (var i = 0; i < LogosActions.Count; i++)
             {
-                if (!LogosActions[i].Name.Contains(actionSetEditerFilter, StringComparison.CurrentCultureIgnoreCase))
+                if (!LogosActions[i].Name.Contains(actionNameFilter, StringComparison.CurrentCultureIgnoreCase))
                     continue;
-                if (ImGui.Selectable(LogosActions[i].Name, prevActionIndex == i))
+                if (ImGui.Selectable(LogosActions[i].Name, currentActionRecipe.ActionIndex == i))
                 {
-                    if (prevActionIndex != i)
-                    {
-                        prevActionIndex = i;
-                        changed = true;
-                    }
+                    currentActionRecipe.ActionIndex = i;
+                    changed = true;
                     closePopup = true;
                 }
             }
             if (closePopup)
             {
                 ImGui.CloseCurrentPopup();
-                actionSetEditerFilter = "";
+                actionNameFilter = "";
             }
             ImGui.EndChild();
             ImGui.EndCombo();
         }
-        if (prevActionIndex == 0)
-        {
+        if (currentActionRecipe.ActionIndex == 0)
             return changed;
-        }
 
         ImGui.SameLine();
         if (changed)
         {
-            action = LogosActions[prevActionIndex];
-            prevRecipeIndex = 0;
+            action = LogosActions[currentActionRecipe.ActionIndex];
+            currentActionRecipe.RecipeIndex = 0;
         }
-        (var preview_min, var preview_info) = Plugin.GetRecipeInfo(action.Recipes[prevRecipeIndex]);
+        var (preview_min, preview_info) = Plugin.GetRecipeInfo(action.Recipes[currentActionRecipe.RecipeIndex]);
         var preview = $"[{preview_min}] {preview_info}";
         ImGui.SetNextItemWidth(ImGui.CalcTextSize(preview).X + 28 * fontScaling);
-        if (ImGui.BeginCombo("###recipe", preview))
+        if (ImGui.BeginCombo("##SelectRecipe", preview))
         {
             for (var i = 0; i < action.Recipes.Count; i++)
             {
                 (var min, var recipeString) = Plugin.GetRecipeInfo(action.Recipes[i]);
 
-                if (ImGui.Selectable($"[{min}] {recipeString}", prevRecipeIndex == i))
+                if (ImGui.Selectable($"[{min}] {recipeString}", currentActionRecipe.RecipeIndex == i))
                 {
-                    prevRecipeIndex = i;
+                    currentActionRecipe.RecipeIndex = i;
                     changed = true;
                 }
             }
@@ -302,31 +292,32 @@ public class MainWindow : Window, IDisposable
         }
         return changed;
     }
-    private bool DrawActionSetOperators(List<ActionSet> actionSets, int actionSetIndex)
-    {
-        var autoSynthesis = Plugin.Config.AutoSynthesis;
 
+    private bool DrawActionSetOperator(List<ActionSet> actionSets, int index)
+    {
         var changed = false;
-        var (selectedActionIndex1, selectedRecipeIndex1) = actionSets[actionSetIndex].MagiaAction1;
-        var (selectedActionIndex2, selectedRecipeIndex2) = actionSets[actionSetIndex].MagiaAction2;
-        using (ImRaii.Disabled(selectedActionIndex1 == 0 && selectedActionIndex2 == 0))
+        var autoSynthesis = Plugin.Config.AutoSynthesis;
+        var actionRecipe1 = actionSets[index].ActionRecipe1;
+        var actionRecipe2 = actionSets[index].ActionRecipe2;
+        using (ImRaii.Disabled(actionRecipe1.ActionIndex == 0 && actionRecipe2.ActionIndex == 0))
         {
             if (ImGui.Button("一键放入"))
             {
-                if (selectedActionIndex2 != 0)
-                    Plugin.PutRecipe(LogosActions[selectedActionIndex2].Recipes[selectedRecipeIndex2]);
-                if (selectedActionIndex1 != 0)
-                    Plugin.PutRecipe(LogosActions[selectedActionIndex1].Recipes[selectedRecipeIndex1]);
+                if (actionRecipe2.ActionIndex != 0)
+                    Plugin.PutRecipe(LogosActions[actionRecipe2.ActionIndex].Recipes[actionRecipe2.RecipeIndex]);
+                if (actionRecipe1.ActionIndex != 0)
+                    Plugin.PutRecipe(LogosActions[actionRecipe1.ActionIndex].Recipes[actionRecipe1.RecipeIndex]);
                 if (autoSynthesis)
                     Plugin.Synthesis();
             }
         }
+
         var canDelete = ImGui.GetIO().KeyCtrl;
         using (ImRaii.Disabled(!canDelete))
         {
             if (ImGui.Button("删除"))
             {
-                actionSets.RemoveAt(actionSetIndex);
+                actionSets.RemoveAt(index);
                 changed = true;
             }
         }

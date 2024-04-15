@@ -1,20 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using ClickLib.Clicks;
-using Dalamud;
-using Dalamud.Game.Addon.Events;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Windowing;
-using Dalamud.IoC;
 using Dalamud.Memory;
 using Dalamud.Plugin;
-using ECommons.DalamudServices;
 using ECommons;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using LogogramHelperEx.Classes;
@@ -27,16 +23,23 @@ namespace LogogramHelperEx;
 public sealed class Plugin : IDalamudPlugin
 {
     public WindowSystem WindowSystem = new("LogogramHelperEx");
+
     public MainWindow MainWindow { get; init; }
+
     public LogosWindow LogosWindow { get; init; }
+
     internal EzTaskManager  EzTaskManager { get; init; }
 
-    internal Dictionary<ulong, List<uint>> Logograms; // 未鉴定的文理碎晶
+    internal Dictionary<ulong, List<uint>> Logograms = null!; // 未鉴定的文理碎晶
 
-    internal List<LogosAction> LogosActions; // 文理技能
-    internal Dictionary<uint, (int Index, string Name)> MagiciteItems; // 文理碎晶(28种)
+    internal List<LogosActionInfo> LogosActions = null!; // 文理技能
+
+    internal Dictionary<uint, (int Index, string Name)> MagiciteItems = null!; // 文理碎晶(28种)
+
     internal Dictionary<uint, int> MagiciteItemStock = []; // 文理碎晶余量
+
     internal Configuration Config;
+
     public Plugin(DalamudPluginInterface pluginInterface)
     {
         ECommonsMain.Init(pluginInterface, this);
@@ -85,13 +88,12 @@ public sealed class Plugin : IDalamudPlugin
     private void LoadData()
     {
         TextureManager.LoadIcon(786);
-        MagiciteItem.Load();
-        MagiciteItems = MagiciteItem.Items;
+        MagiciteItems = MagiciteItem.Load();
         Logograms = Logogram.Load();
-        LogosActions = LogosAction.Load();
+        LogosActions = LogosActionInfo.Load();
     }
 
-    public void DrawLogosDetailUI(LogosAction action)
+    public void DrawLogosDetailUI(LogosActionInfo action)
     {
         LogosWindow.SetDetails(action);
         LogosWindow.IsOpen = true;
@@ -113,7 +115,7 @@ public sealed class Plugin : IDalamudPlugin
             var seStr = GetTooltipString(stringArrayData, 13);
             if (seStr == null) return;
 
-            var insert = $"\n\nPotential logograms contained: {string.Join(", ", [.. contentsName])}";
+            var insert = $"\n\n可获得: {string.Join(", ", [.. contentsName])}";
             if (!seStr.TextValue.Contains(insert)) seStr.Payloads.Insert(1, new TextPayload(insert));
 
             stringArrayData->SetValue(13, seStr.Encode(), false, true, true);
@@ -177,14 +179,16 @@ public sealed class Plugin : IDalamudPlugin
             }
         });
     }
+
     public unsafe void Synthesis()
     {
         var addon2 = Svc.GameGui.GetAddonByName("EurekaMagiciteItemSynthesis");
         if (addon2 == IntPtr.Zero)
             return;
         var clickSynthesis = ClickEurekaMagiciteItemSynthesis.Using(addon2);
-        EzTaskManager.Enqueue(() => clickSynthesis.Synthesis());
+        EzTaskManager.Enqueue(clickSynthesis.Synthesis);
     }
+
     private unsafe bool IsArrayEmpty(AtkUnitBase* addon, int arrayNodeIndex)
     {
         var arrayNode = addon->UldManager.NodeList[arrayNodeIndex];
@@ -207,6 +211,7 @@ public sealed class Plugin : IDalamudPlugin
         if (IsArrayEmpty(addon, 17)) return 1;
         return -1;
     }
+
     public (int, string) GetRecipeInfo(List<(uint id, int quantity)> recipe)
     {
         var total = new List<int>();

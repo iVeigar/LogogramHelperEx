@@ -6,10 +6,16 @@ using ECommons.DalamudServices;
 
 namespace LogogramHelperEx;
 
+public class ActionRecipe
+{
+    public int ActionIndex = 0;
+    public int RecipeIndex = 0;
+}
+
 public class ActionSet
 {
-    public (int ActionIndex, int RecipeIndex) MagiaAction1 = (0, 0);
-    public (int ActionIndex, int RecipeIndex) MagiaAction2 = (0, 0);
+    public ActionRecipe ActionRecipe1 = new();
+    public ActionRecipe ActionRecipe2 = new();
 }
 
 public class ActionSetGroup

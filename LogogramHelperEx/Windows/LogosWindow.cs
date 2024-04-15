@@ -13,12 +13,12 @@ public sealed class LogosWindow(Plugin plugin) : Window(
 "技能详情", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.AlwaysAutoResize), IDisposable
 {
     private Plugin Plugin { get; } = plugin;
-    private LogosAction Action { get; set; } = plugin.LogosActions[1];
+    private LogosActionInfo Action { get; set; } = plugin.LogosActions[1];
     private IDalamudTextureWrap Texture { get; set; } = null!;
     public void Dispose()
     {
     }
-    public void SetDetails(LogosAction action) {
+    public void SetDetails(LogosActionInfo action) {
         Action = action;
         Texture = TextureManager.GetTex(action.IconID);
     }
@@ -56,7 +56,7 @@ public sealed class LogosWindow(Plugin plugin) : Window(
         ImGui.BeginChild($"combinations{Action.Name}", new Vector2(540.0f * fontScaling, (ImGui.GetFontSize() + 5) * Action.Recipes.Count), false, ImGuiWindowFlags.NoScrollbar);
         ImGui.Columns(2, "combinations", false);
         ImGui.SetColumnWidth(0, 40f);
-        ImGui.SetColumnWidth(1, 500f * fontScaling);
+        ImGui.SetColumnWidth(1, 300f * fontScaling);
         foreach (var recipe in Action.Recipes )
         {
             (var min, var recipeString) = Plugin.GetRecipeInfo(recipe);

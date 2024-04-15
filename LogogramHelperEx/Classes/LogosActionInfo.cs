@@ -1,14 +1,12 @@
+using System.Collections.Generic;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Utility;
 using ECommons.DalamudServices;
-using LogogramHelperEx.Classes;
 using Lumina.Excel.GeneratedSheets;
-using System;
-using System.Collections.Generic;
 
 namespace LogogramHelperEx
 {
-    public class LogosAction { 
+    public class LogosActionInfo { 
         public string Name { get; set; } = null!;
         public uint IconID { get; set; }
         public string Type { get; set; } = null!;
@@ -18,9 +16,9 @@ namespace LogogramHelperEx
         public List<List<(uint, int)>> Recipes { get; set; } = null!;
         public List<uint> Roles { get; set; } = null!;
 
-        public static List<LogosAction> Load()
+        public static List<LogosActionInfo> Load()
         {
-            List<LogosAction> ret = [];
+            List<LogosActionInfo> ret = [];
             ret.Add(new()
             {
                 Name = "无"

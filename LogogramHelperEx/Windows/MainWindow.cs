@@ -304,9 +304,10 @@ public sealed class MainWindow : Window, IDisposable
         var recipe1 = action1.Recipes?[actionRecipe1.RecipeIndex];
         var recipe2 = action2.Recipes?[actionRecipe2.RecipeIndex];
         var amount = Plugin.GetActionSetQuantity(recipe1, recipe2);
+        var w = ImGui.CalcTextSize("(剩余200)    ").X;
         using (ImRaii.Disabled(recipe1 == null && recipe2 == null || amount == 0))
         {
-            if (ImGui.Button($"一键放入(剩余{amount})"))
+            if (ImGui.Button($" 一键放入\n(剩余{amount})", new Vector2(w, 45f) * fontScaling))
             {
                 if (recipe2 != null)
                     Plugin.PutRecipe(recipe2);
@@ -316,11 +317,11 @@ public sealed class MainWindow : Window, IDisposable
                     Plugin.Synthesis();
             }
         }
-
+        ImGui.SameLine();
         var canDelete = ImGui.GetIO().KeyCtrl;
         using (ImRaii.Disabled(!canDelete))
         {
-            if (ImGui.Button("删除此组"))
+            if (ImGui.Button("删除", new Vector2(45f, 45f) * fontScaling))
             {
                 actionSets.RemoveAt(index);
                 changed = true;

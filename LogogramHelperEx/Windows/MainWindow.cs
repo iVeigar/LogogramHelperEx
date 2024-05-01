@@ -20,7 +20,7 @@ public sealed class MainWindow : Window, IDisposable
     public MainWindow(Plugin plugin) : base(
         "文理技能", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.AlwaysAutoResize)
     {
-        
+
         Plugin = plugin;
         LogosActions = plugin.LogosActions;
 
@@ -106,7 +106,7 @@ public sealed class MainWindow : Window, IDisposable
         ImGui.SameLine();
         using (ImRaii.Disabled(groups.Count == 0 || currentActionSetGroupTab == -1 || !ImGui.GetIO().KeyCtrl))
         {
-            if (ImGui.Button("删除当前展示的分类"))
+            if (ImGui.Button("删除当前分类"))
             {
                 groups.RemoveAt(currentActionSetGroupTab);
                 currentActionSetGroupTab = -1;
@@ -114,7 +114,7 @@ public sealed class MainWindow : Window, IDisposable
             }
         }
         ImGui.SameLine();
-        if(ImGui.Checkbox("一键放入后自动提取记忆（慎用！）", ref autoSynthesis))
+        if (ImGui.Checkbox("一键放入后自动提取记忆（慎用！）", ref autoSynthesis))
         {
             save = true;
             Plugin.Config.AutoSynthesis = autoSynthesis;
@@ -141,7 +141,7 @@ public sealed class MainWindow : Window, IDisposable
         }
     }
 
-    
+
     private bool DrawActionSetGroupTab(ActionSetGroup group)
     {
         ImGui.PushID(group.Name);
@@ -159,7 +159,7 @@ public sealed class MainWindow : Window, IDisposable
                 ImGui.PushID(i);
                 save |= DrawActionSetRow(group.Sets, i);
                 ImGui.PopID();
-                if(i < group.Sets.Count - 1)
+                if (i < group.Sets.Count - 1)
                 {
                     ImGui.TableNextColumn();
                 }
@@ -273,16 +273,15 @@ public sealed class MainWindow : Window, IDisposable
             action = LogosActions[currentActionRecipe.ActionIndex];
             currentActionRecipe.RecipeIndex = 0;
         }
-        var (preview_min, preview_info) = Plugin.GetRecipeInfo(action.Recipes[currentActionRecipe.RecipeIndex]);
-        var preview = $"[{preview_min}] {preview_info}";
-        ImGui.SetNextItemWidth(ImGui.CalcTextSize(preview).X + 28 * fontScaling);
-        if (ImGui.BeginCombo("##SelectRecipe", preview))
+        var (_, previewInfo) = Plugin.GetRecipeInfo(action.Recipes[currentActionRecipe.RecipeIndex]);
+        ImGui.SetNextItemWidth(ImGui.CalcTextSize(previewInfo).X + 28 * fontScaling);
+        if (ImGui.BeginCombo("##SelectRecipe", previewInfo))
         {
             for (var i = 0; i < action.Recipes.Count; i++)
             {
-                (var min, var recipeString) = Plugin.GetRecipeInfo(action.Recipes[i]);
+                var (_, recipeInfo) = Plugin.GetRecipeInfo(action.Recipes[i]);
 
-                if (ImGui.Selectable($"[{min}] {recipeString}", currentActionRecipe.RecipeIndex == i))
+                if (ImGui.Selectable(recipeInfo, currentActionRecipe.RecipeIndex == i))
                 {
                     currentActionRecipe.RecipeIndex = i;
                     changed = true;
@@ -297,16 +296,22 @@ public sealed class MainWindow : Window, IDisposable
     {
         var changed = false;
         var autoSynthesis = Plugin.Config.AutoSynthesis;
-        var actionRecipe1 = actionSets[index].ActionRecipe1;
-        var actionRecipe2 = actionSets[index].ActionRecipe2;
-        using (ImRaii.Disabled(actionRecipe1.ActionIndex == 0 && actionRecipe2.ActionIndex == 0))
+        var actionSet = actionSets[index];
+        var actionRecipe1 = actionSet.ActionRecipe1;
+        var actionRecipe2 = actionSet.ActionRecipe2;
+        var action1 = LogosActions[actionRecipe1.ActionIndex];
+        var action2 = LogosActions[actionRecipe2.ActionIndex];
+        var recipe1 = action1.Recipes?[actionRecipe1.RecipeIndex];
+        var recipe2 = action2.Recipes?[actionRecipe2.RecipeIndex];
+        var amount = Plugin.GetActionSetQuantity(recipe1, recipe2);
+        using (ImRaii.Disabled(recipe1 == null && recipe2 == null || amount == 0))
         {
-            if (ImGui.Button("一键放入"))
+            if (ImGui.Button($"一键放入(剩余{amount})"))
             {
-                if (actionRecipe2.ActionIndex != 0)
-                    Plugin.PutRecipe(LogosActions[actionRecipe2.ActionIndex].Recipes[actionRecipe2.RecipeIndex]);
-                if (actionRecipe1.ActionIndex != 0)
-                    Plugin.PutRecipe(LogosActions[actionRecipe1.ActionIndex].Recipes[actionRecipe1.RecipeIndex]);
+                if (recipe2 != null)
+                    Plugin.PutRecipe(recipe2);
+                if (recipe1 != null)
+                    Plugin.PutRecipe(recipe1);
                 if (autoSynthesis)
                     Plugin.Synthesis();
             }
@@ -315,7 +320,7 @@ public sealed class MainWindow : Window, IDisposable
         var canDelete = ImGui.GetIO().KeyCtrl;
         using (ImRaii.Disabled(!canDelete))
         {
-            if (ImGui.Button("删除"))
+            if (ImGui.Button("删除此组"))
             {
                 actionSets.RemoveAt(index);
                 changed = true;

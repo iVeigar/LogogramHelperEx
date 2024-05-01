@@ -28,7 +28,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public LogosWindow LogosWindow { get; init; }
 
-    internal EzTaskManager  EzTaskManager { get; init; }
+    internal EzTaskManager EzTaskManager { get; init; }
 
     internal Dictionary<ulong, List<uint>> Logograms = null!; // 未鉴定的文理碎晶
 
@@ -77,7 +77,7 @@ public sealed class Plugin : IDalamudPlugin
                 click.SwitchCategory(0);
             }
             ObtainLogograms();
-        } 
+        }
         else
         {
             if (MainWindow.IsOpen) MainWindow.IsOpen = false;
@@ -167,7 +167,8 @@ public sealed class Plugin : IDalamudPlugin
         var clickShardList = ClickEurekaMagiciteItemShardList.Using(addon);
         var clickSynthesis = ClickEurekaMagiciteItemSynthesis.Using(addon2);
 
-        EzTaskManager.Enqueue(() => {
+        EzTaskManager.Enqueue(() =>
+        {
             var emptyArray = GetEmptyArray((AtkUnitBase*)addon2);
             if (emptyArray == -1)
                 return;
@@ -216,16 +217,49 @@ public sealed class Plugin : IDalamudPlugin
     {
         var total = new List<int>();
         var stockStrings = new List<string>();
-        foreach ((var MagiciteItemId, var Quantity) in recipe)
+        foreach (var (id, quantity) in recipe)
         {
-            if (!MagiciteItemStock.TryGetValue(MagiciteItemId, out var stock))
-                MagiciteItemStock.Add(MagiciteItemId, 0);
-            total.Add(stock / Quantity);
-            for (var j = 0; j < Quantity; j++)
+            if (!MagiciteItemStock.TryGetValue(id, out var stock))
             {
-                stockStrings.Add($"{MagiciteItems[MagiciteItemId].Name}({stock})");
+                stock = 0;
+                MagiciteItemStock.Add(id, 0);
+            }
+            total.Add(stock / quantity);
+            for (var j = 0; j < quantity; j++)
+            {
+                stockStrings.Add($"{MagiciteItems[id].Name}({stock})");
             }
         }
         return (total.Min(), string.Join(" + ", stockStrings));
+    }
+
+    public int GetActionSetQuantity(List<(uint id, int quantity)>? recipe1, List<(uint id, int quantity)>? recipe2)
+    {
+        var dict1 = recipe1?.ToDictionary();
+        var dict2 = recipe2?.ToDictionary();
+        var dict = dict1 ?? dict2;
+        if (dict == null)
+            return 0;
+        if (dict1 != null && dict2 != null)
+        {
+            foreach (var (id, quantity) in dict2)
+            {
+                if (dict.ContainsKey(id))
+                    dict[id] += quantity;
+                else
+                    dict[id] = quantity;
+            }
+        }
+        List<int> total = [200];
+        foreach (var (id, quantity) in dict)
+        {
+            if (!MagiciteItemStock.TryGetValue(id, out var stock))
+            {
+                stock = 0;
+                MagiciteItemStock.Add(id, 0);
+            }
+            total.Add(stock / quantity);
+        }
+        return total.Min();
     }
 }

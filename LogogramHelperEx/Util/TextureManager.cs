@@ -30,10 +30,11 @@ namespace LogogramHelperEx.Util
                 return;
 
             var iconTex = await Task.Run(() => Svc.Texture.GetIcon(iconID));
-            if(iconTex != null) TextureStorage[iconID] = iconTex;
+            if (iconTex != null) TextureStorage[iconID] = iconTex;
         }
 
-        public static void Dispose() {
+        public static void Dispose()
+        {
             TextureStorage.Values.ToList().ForEach(v => v?.Dispose());
             TextureStorage.Clear();
         }

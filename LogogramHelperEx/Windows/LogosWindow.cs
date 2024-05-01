@@ -18,7 +18,8 @@ public sealed class LogosWindow(Plugin plugin) : Window(
     public void Dispose()
     {
     }
-    public void SetDetails(LogosActionInfo action) {
+    public void SetDetails(LogosActionInfo action)
+    {
         Action = action;
         Texture = TextureManager.GetTex(action.IconID);
     }
@@ -35,7 +36,8 @@ public sealed class LogosWindow(Plugin plugin) : Window(
         ImGui.Text(Action.Name);
         ImGui.SameLine();
         ImGui.BeginGroup();
-        Action.Roles.ForEach(role => {
+        Action.Roles.ForEach(role =>
+        {
             var roleTexture = TextureManager.GetTex(role);
             ImGui.Image(roleTexture.ImGuiHandle, new Vector2(19, 19) * fontScaling, new Vector2(0.0f, 0.0f), new Vector2(1.0f, 1.0f));
             ImGui.SameLine();
@@ -57,7 +59,7 @@ public sealed class LogosWindow(Plugin plugin) : Window(
         ImGui.Columns(2, "combinations", false);
         ImGui.SetColumnWidth(0, 40f);
         ImGui.SetColumnWidth(1, 300f * fontScaling);
-        foreach (var recipe in Action.Recipes )
+        foreach (var recipe in Action.Recipes)
         {
             (var min, var recipeString) = Plugin.GetRecipeInfo(recipe);
             if (min > 0)

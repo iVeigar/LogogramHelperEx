@@ -17,7 +17,7 @@ using LogogramHelperEx.Classes;
 using LogogramHelperEx.Util;
 using LogogramHelperEx.Windows;
 using Lumina.Excel;
-using EzTaskManager = ECommons.Automation.TaskManager;
+using EzTaskManager = ECommons.Automation.LegacyTaskManager.TaskManager;
 namespace LogogramHelperEx;
 
 public sealed class Plugin : IDalamudPlugin

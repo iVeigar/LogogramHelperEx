@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Utility;
 using ECommons.DalamudServices;
@@ -24,23 +25,20 @@ namespace LogogramHelperEx
             {
                 Name = "无"
             });
-            foreach (var magiaAction in Svc.Data.GetExcelSheet<EurekaMagiaAction>()!)
+            foreach (var magiaAction in Svc.Data.GetExcelSheet<EurekaMagiaAction>()!.Skip(1))
             {
-                var action = magiaAction.Action.Value;
-                if (action != null && action.RowId != 0)
+                var action = magiaAction.Action.Value!;
+                ret.Add(new()
                 {
-                    ret.Add(new()
-                    {
-                        Name = action.Name.ToDalamudString().TextValue.Replace("文理", string.Empty).Replace("的记忆", string.Empty).Replace("的加护", string.Empty),
-                        IconID = action.Icon,
-                        Type = action.ActionCategory.Value!.Name.ToDalamudString().TextValue,
-                        Description = Plugin.GetSheetRow<ActionTransient>(action.RowId)!.Description.ToDalamudString(),
-                        Cast = action.Cast100ms == 0 ? "即时" : $"{action.Cast100ms / 10.0f:F2}s",
-                        Recast = $"{action.Recast100ms / 10.0f:F2}s",
-                        Roles = AllRoles[(int)magiaAction.RowId - 1],
-                        Recipes = AllRecipes[(int)magiaAction.RowId - 1]
-                    });
-                }
+                    Name = action.Name.ToDalamudString().TextValue.Replace("文理", string.Empty).Replace("的记忆", string.Empty).Replace("的加护", string.Empty),
+                    IconID = action.Icon,
+                    Type = action.ActionCategory.Value!.Name.ToDalamudString().TextValue,
+                    Description = Plugin.GetSheetRow<ActionTransient>(action.RowId)!.Description.ToDalamudString(),
+                    Cast = action.Cast100ms == 0 ? "即时" : $"{action.Cast100ms / 10.0f:F2}s",
+                    Recast = $"{action.Recast100ms / 10.0f:F2}s",
+                    Roles = AllRoles[(int)magiaAction.RowId - 1],
+                    Recipes = AllRecipes[(int)magiaAction.RowId - 1]
+                });
             }
             return ret;
         }

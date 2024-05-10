@@ -33,7 +33,7 @@ public sealed class MainWindow : Window, IDisposable
     }
 
     private string filter = "";
-    private static float fontScaling => ImGuiHelpers.GlobalScaleSafe;
+    private static float fontScale => ImGuiHelpers.GlobalScaleSafe;
 
     public override void Draw()
     {
@@ -75,7 +75,7 @@ public sealed class MainWindow : Window, IDisposable
             var tint = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
             if (!action.Name.Contains(filter, StringComparison.CurrentCultureIgnoreCase))
                 tint.W = 0.15f;
-            if (ImGui.ImageButton(TextureManager.GetTex(action.IconID).ImGuiHandle, new Vector2(40, 40) * fontScaling, new Vector2(0.0f, 0.0f), new Vector2(1.0f, 1.0f), padding, bg, tint))
+            if (ImGui.ImageButton(TextureManager.GetTex(action.IconID).ImGuiHandle, new Vector2(40, 40) * fontScale, new Vector2(0.0f, 0.0f), new Vector2(1.0f, 1.0f), padding, bg, tint))
             {
                 Plugin.DrawLogosDetailUI(action);
             }
@@ -150,7 +150,7 @@ public sealed class MainWindow : Window, IDisposable
         ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(4, 10));
         if (ImGui.BeginTable($"{group.Name}", 3, ImGuiTableFlags.RowBg | ImGuiTableFlags.Borders | ImGuiTableFlags.SizingStretchProp))
         {
-            ImGui.TableSetupColumn("图标", ImGuiTableColumnFlags.WidthFixed, 90 * fontScaling + 24);
+            ImGui.TableSetupColumn("图标", ImGuiTableColumnFlags.WidthFixed, 90 * fontScale + 24);
             ImGui.TableSetupColumn("编辑");
             ImGui.TableSetupColumn("操作");
             ImGui.TableNextColumn();
@@ -208,17 +208,17 @@ public sealed class MainWindow : Window, IDisposable
         var tint = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
         if (action1 <= 0 || action2 <= 0)
         {
-            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 1 + ImGui.GetContentRegionAvail().X / 2 - 22.5f * fontScaling);
-            DrawIcon(action1 <= 0 ? action2 : action1, fontScaling, tint, bg);
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 1 + ImGui.GetContentRegionAvail().X / 2 - 22.5f * fontScale);
+            DrawIcon(action1 <= 0 ? action2 : action1, fontScale, tint, bg);
         }
         else
         {
             var cursor = ImGui.GetCursorPos();
             ImGui.SetCursorPosX(cursor.X + 4);
-            DrawIcon(action1, fontScaling, tint, bg);
-            ImGui.SetCursorPosX(cursor.X + 45f * fontScaling + 16);
+            DrawIcon(action1, fontScale, tint, bg);
+            ImGui.SetCursorPosX(cursor.X + 45f * fontScale + 16);
             ImGui.SetCursorPosY(cursor.Y);
-            DrawIcon(action2, fontScaling, tint, bg);
+            DrawIcon(action2, fontScale, tint, bg);
         }
     }
 
@@ -238,10 +238,10 @@ public sealed class MainWindow : Window, IDisposable
     {
         var changed = false;
         var action = LogosActions[currentActionRecipe.ActionIndex];
-        ImGui.SetNextItemWidth(80.0f * fontScaling);
+        ImGui.SetNextItemWidth(80.0f * fontScale);
         if (ImGui.BeginCombo("##SelectAction", action.Name, ImGuiComboFlags.HeightLargest))
         {
-            ImGui.SetNextItemWidth(70.0f * fontScaling);
+            ImGui.SetNextItemWidth(70.0f * fontScale);
             ImGui.InputTextWithHint("", "搜索", ref actionNameFilter, 50, ImGuiInputTextFlags.AutoSelectAll);
             ImGui.BeginChild("##SelectActionChild", new Vector2(0, 105 * ImGuiHelpers.GlobalScale), true);
             var closePopup = false;
@@ -274,7 +274,7 @@ public sealed class MainWindow : Window, IDisposable
             currentActionRecipe.RecipeIndex = 0;
         }
         var (_, previewInfo) = Plugin.GetRecipeInfo(action.Recipes[currentActionRecipe.RecipeIndex]);
-        ImGui.SetNextItemWidth(ImGui.CalcTextSize(previewInfo).X + 28 * fontScaling);
+        ImGui.SetNextItemWidth(ImGui.CalcTextSize(previewInfo).X + 28 * fontScale);
         if (ImGui.BeginCombo("##SelectRecipe", previewInfo))
         {
             for (var i = 0; i < action.Recipes.Count; i++)
@@ -307,7 +307,7 @@ public sealed class MainWindow : Window, IDisposable
         var w = ImGui.CalcTextSize("(剩余200)    ").X;
         using (ImRaii.Disabled(recipe1 == null && recipe2 == null || amount == 0))
         {
-            if (ImGui.Button($" 一键放入\n(剩余{amount})", new Vector2(w, 45f) * fontScaling))
+            if (ImGui.Button($" 一键放入\n(剩余{amount})", new Vector2(w, 45f) * fontScale))
             {
                 if (recipe2 != null)
                     Plugin.PutRecipe(recipe2);
@@ -321,7 +321,7 @@ public sealed class MainWindow : Window, IDisposable
         var canDelete = ImGui.GetIO().KeyCtrl;
         using (ImRaii.Disabled(!canDelete))
         {
-            if (ImGui.Button("删除", new Vector2(45f, 45f) * fontScaling))
+            if (ImGui.Button("删除", new Vector2(45f, 45f) * fontScale))
             {
                 actionSets.RemoveAt(index);
                 changed = true;

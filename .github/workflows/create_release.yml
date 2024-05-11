@@ -12,7 +12,7 @@ jobs:
   release:
     uses: iVeigar/MyDalamudPlugins/.github/workflows/reusable_create_release.yml@master
     with:
-      internal_name: LogogramHelperEx-CN
+      internal_name: LogogramHelperEx
       solution_name: LogogramHelperEx
       build_configuration: Release
       personal_plugin_repo: iVeigar/MyDalamudPlugins

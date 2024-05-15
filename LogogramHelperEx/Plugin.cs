@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ClickLib.Clicks;
+using ClickLib.Exceptions;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
@@ -10,6 +11,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Memory;
 using Dalamud.Plugin;
 using ECommons;
+using ECommons.Automation;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -43,6 +45,7 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin(DalamudPluginInterface pluginInterface)
     {
         ECommonsMain.Init(pluginInterface, this);
+        Callback.InstallHook();
         LoadData();
         EzTaskManager = new();
         Config = pluginInterface.GetPluginConfig() as Configuration ?? new();
@@ -59,6 +62,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
+        Callback.UninstallHook();
         WindowSystem.RemoveAllWindows();
         TextureManager.Dispose();
         ECommonsMain.Dispose();
@@ -156,38 +160,92 @@ public sealed class Plugin : IDalamudPlugin
 
     public unsafe void PutRecipe(List<(uint id, int quantity)> recipe)
     {
-        var addon = Svc.GameGui.GetAddonByName("EurekaMagiciteItemShardList");
-        if (addon == IntPtr.Zero)
-            return;
-
-        var addon2 = Svc.GameGui.GetAddonByName("EurekaMagiciteItemSynthesis");
-        if (addon2 == IntPtr.Zero)
-            return;
-
-        var clickShardList = ClickEurekaMagiciteItemShardList.Using(addon);
-        var clickSynthesis = ClickEurekaMagiciteItemSynthesis.Using(addon2);
-
         EzTaskManager.Enqueue(() =>
         {
-            var emptyArray = GetEmptyArray((AtkUnitBase*)addon2);
-            if (emptyArray == -1)
-                return;
-            EzTaskManager.EnqueueImmediate(() => clickSynthesis.SelectArray(emptyArray));
-            foreach (var item in recipe)
+            var which = IsEmptyArray() switch
             {
-                for (var i = 0; i < item.quantity; i++)
-                    EzTaskManager.EnqueueImmediate(() => clickShardList.SelectItem(MagiciteItems[item.id].Index));
+                (true, _) => 0,
+                (_, true) => 1,
+                _ => -1
+            };
+            if (which == -1) return;
+            try
+            {
+                var clickSynthesis = new ClickEurekaMagiciteItemSynthesis();
+                foreach (var item in recipe)
+                {
+                    for (var i = 0; i < item.quantity; i++)
+                        clickSynthesis.Put(which, MagiciteItems[item.id].Index);
+                }
+            }
+            catch (InvalidClickException)
+            {
+            }
+        });
+    }
+    public unsafe void PutRecipes(List<(uint id, int quantity)>? recipe1, List<(uint id, int quantity)>? recipe2)
+    {
+        ClearArrays();
+        EzTaskManager.Enqueue(() =>
+        {
+            try
+            {
+                var clickSynthesis = new ClickEurekaMagiciteItemSynthesis();
+                if (recipe2 == null)
+                    (recipe1, recipe2) = (recipe2, recipe1);
+                if (recipe2 != null)
+                {
+                    foreach (var item in recipe2)
+                    {
+                        for (var i = 0; i < item.quantity; i++)
+                            clickSynthesis.Put(0, MagiciteItems[item.id].Index);
+                    }
+                }
+                if (recipe1 != null)
+                {
+                    foreach (var item in recipe1)
+                    {
+                        for (var i = 0; i < item.quantity; i++)
+                            clickSynthesis.Put(1, MagiciteItems[item.id].Index);
+                    }
+                }
+            }
+            catch (InvalidClickException)
+            {
             }
         });
     }
 
     public unsafe void Synthesis()
     {
-        var addon2 = Svc.GameGui.GetAddonByName("EurekaMagiciteItemSynthesis");
-        if (addon2 == IntPtr.Zero)
-            return;
-        var clickSynthesis = ClickEurekaMagiciteItemSynthesis.Using(addon2);
-        EzTaskManager.Enqueue(clickSynthesis.Synthesis);
+        EzTaskManager.Enqueue(() =>
+        {
+            if (IsEmptyArray() is (_, true))
+                return;
+            try
+            {
+                new ClickEurekaMagiciteItemSynthesis().Synthesis();
+            }
+            catch (InvalidClickException)
+            {
+            }
+        });
+    }
+
+    public unsafe void ClearArrays()
+    {
+        EzTaskManager.Enqueue(() =>
+        {
+            try
+            {
+                var clickSynthesis = new ClickEurekaMagiciteItemSynthesis();
+                for (var i = 5; i >= 0; i--)
+                    clickSynthesis.Retrieve(i);
+            }
+            catch (InvalidClickException)
+            {
+            }
+        });
     }
 
     private unsafe bool IsArrayEmpty(AtkUnitBase* addon, int arrayNodeIndex)
@@ -206,11 +264,12 @@ public sealed class Plugin : IDalamudPlugin
         return true;
     }
 
-    private unsafe int GetEmptyArray(AtkUnitBase* addon)
+    private unsafe (bool, bool) IsEmptyArray()
     {
-        if (IsArrayEmpty(addon, 16)) return 0;
-        if (IsArrayEmpty(addon, 17)) return 1;
-        return -1;
+        var addon = Svc.GameGui.GetAddonByName("EurekaMagiciteItemSynthesis");
+        if (addon == IntPtr.Zero)
+            return (false, false);
+        return (IsArrayEmpty((AtkUnitBase*)addon, 16), IsArrayEmpty((AtkUnitBase*)addon, 17));
     }
 
     public (int, string) GetRecipeInfo(List<(uint id, int quantity)> recipe)

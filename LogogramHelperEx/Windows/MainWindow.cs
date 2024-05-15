@@ -309,14 +309,14 @@ public sealed class MainWindow : Window, IDisposable
         {
             if (ImGui.Button($" 一键放入\n(剩余{amount})", new Vector2(w, 45f) * fontScale))
             {
-                if (recipe2 != null)
-                    Plugin.PutRecipe(recipe2);
-                if (recipe1 != null)
-                    Plugin.PutRecipe(recipe1);
+                Plugin.PutRecipes(recipe1, recipe2);
                 if (autoSynthesis)
                     Plugin.Synthesis();
             }
         }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip("融合器里已有的碎晶会被自动取回");
+
         ImGui.SameLine();
         var canDelete = ImGui.GetIO().KeyCtrl;
         using (ImRaii.Disabled(!canDelete))

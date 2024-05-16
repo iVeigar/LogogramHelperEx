@@ -11,7 +11,6 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Memory;
 using Dalamud.Plugin;
 using ECommons;
-using ECommons.Automation;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -45,7 +44,6 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin(DalamudPluginInterface pluginInterface)
     {
         ECommonsMain.Init(pluginInterface, this);
-        Callback.InstallHook();
         LoadData();
         EzTaskManager = new();
         Config = pluginInterface.GetPluginConfig() as Configuration ?? new();
@@ -62,7 +60,6 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
-        Callback.UninstallHook();
         WindowSystem.RemoveAllWindows();
         TextureManager.Dispose();
         ECommonsMain.Dispose();

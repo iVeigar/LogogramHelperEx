@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
 using Dalamud.Configuration;
 using Dalamud.Utility;
-using ECommons.DalamudServices;
+using ECommons.Configuration;
 
 namespace LogogramHelperEx;
 
@@ -29,11 +28,9 @@ public class ActionSetGroup
     }
 }
 
-[Serializable]
-public class Configuration : IPluginConfiguration
+public class Configuration : IEzConfig, IPluginConfiguration
 {
-    public void Save() => Svc.PluginInterface!.SavePluginConfig(this);
-
+    public void Save() => EzConfig.Save();
     public int Version { get; set; } = 1;
     public List<ActionSetGroup> Groups { get; set; } = [];
     public bool AutoSynthesis { get; set; } = false;

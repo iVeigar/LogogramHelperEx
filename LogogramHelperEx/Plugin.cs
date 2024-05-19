@@ -11,13 +11,12 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Memory;
 using Dalamud.Plugin;
 using ECommons;
+using ECommons.Configuration;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using LogogramHelperEx.Classes;
-using LogogramHelperEx.Util;
 using LogogramHelperEx.Windows;
-using Lumina.Excel;
 using EzTaskManager = ECommons.Automation.LegacyTaskManager.TaskManager;
 namespace LogogramHelperEx;
 
@@ -46,36 +45,34 @@ public sealed class Plugin : IDalamudPlugin
         ECommonsMain.Init(pluginInterface, this);
         LoadData();
         EzTaskManager = new();
-        Config = pluginInterface.GetPluginConfig() as Configuration ?? new();
+        EzConfig.Migrate<Configuration>();
+        Config = EzConfig.Init<Configuration>();
+
         MainWindow = new(this);
         LogosWindow = new(this);
 
         WindowSystem.AddWindow(MainWindow);
         WindowSystem.AddWindow(LogosWindow);
 
-        pluginInterface.UiBuilder.Draw += DrawUI;
-
+        Svc.PluginInterface.UiBuilder.Draw += DrawUI;
         Svc.AddonLifecycle.RegisterListener(AddonEvent.PreRequestedUpdate, "ItemDetail", ItemDetailOnUpdate);
     }
 
     public void Dispose()
     {
         WindowSystem.RemoveAllWindows();
-        TextureManager.Dispose();
         ECommonsMain.Dispose();
     }
 
-    private void DrawUI()
+    private unsafe void DrawUI()
     {
         WindowSystem.Draw();
-        var addonPtr = Svc.GameGui.GetAddonByName("EurekaMagiciteItemShardList", 1);
-        if (addonPtr != IntPtr.Zero)
+        if (GenericHelpers.TryGetAddonByName("EurekaMagiciteItemShardList", out AtkUnitBase* addon) && addon != null)
         {
             if (!MainWindow.IsOpen)
             {
                 MainWindow.IsOpen = true;
-                var click = ClickEurekaMagiciteItemShardList.Using(addonPtr);
-                click.SwitchCategory(0);
+                ClickEurekaMagiciteItemShardList.Using((nint)addon).SwitchCategory(0);
             }
             ObtainLogograms();
         }
@@ -88,7 +85,6 @@ public sealed class Plugin : IDalamudPlugin
 
     private void LoadData()
     {
-        TextureManager.LoadIcon(786);
         MagiciteItems = MagiciteItem.Load();
         Logograms = Logogram.Load();
         LogosActions = LogosActionInfo.Load();
@@ -129,11 +125,6 @@ public sealed class Plugin : IDalamudPlugin
         return stringAddress != IntPtr.Zero ? MemoryHelper.ReadSeStringNullTerminated(stringAddress) : null;
     }
 
-    public static T? GetSheetRow<T>(uint row) where T : ExcelRow
-    {
-        return Svc.Data.Excel.GetSheet<T>()!.GetRow(row);
-    }
-
     private unsafe void ObtainLogograms()
     {
         var arrayData = Framework.Instance()->GetUiModule()->GetRaptureAtkModule()->AtkModule.AtkArrayDataHolder;
@@ -151,7 +142,6 @@ public sealed class Plugin : IDalamudPlugin
                 MagiciteItemStock.Add(id, stock);
                 continue;
             }
-
         }
     }
 
@@ -169,17 +159,18 @@ public sealed class Plugin : IDalamudPlugin
             try
             {
                 var clickSynthesis = new ClickEurekaMagiciteItemSynthesis();
-                foreach (var item in recipe)
+                recipe?.Each(item =>
                 {
                     for (var i = 0; i < item.quantity; i++)
                         clickSynthesis.Put(which, MagiciteItems[item.id].Index);
-                }
+                });
             }
             catch (InvalidClickException)
             {
             }
         });
     }
+
     public unsafe void PutRecipes(List<(uint id, int quantity)>? recipe1, List<(uint id, int quantity)>? recipe2)
     {
         ClearArrays();
@@ -190,22 +181,16 @@ public sealed class Plugin : IDalamudPlugin
                 var clickSynthesis = new ClickEurekaMagiciteItemSynthesis();
                 if (recipe2 == null)
                     (recipe1, recipe2) = (recipe2, recipe1);
-                if (recipe2 != null)
+                recipe2?.Each(item =>
                 {
-                    foreach (var item in recipe2)
-                    {
-                        for (var i = 0; i < item.quantity; i++)
-                            clickSynthesis.Put(0, MagiciteItems[item.id].Index);
-                    }
-                }
-                if (recipe1 != null)
+                    for (var i = 0; i < item.quantity; i++)
+                        clickSynthesis.Put(0, MagiciteItems[item.id].Index);
+                });
+                recipe1?.Each(item =>
                 {
-                    foreach (var item in recipe1)
-                    {
-                        for (var i = 0; i < item.quantity; i++)
-                            clickSynthesis.Put(1, MagiciteItems[item.id].Index);
-                    }
-                }
+                    for (var i = 0; i < item.quantity; i++)
+                        clickSynthesis.Put(1, MagiciteItems[item.id].Index);
+                });
             }
             catch (InvalidClickException)
             {
@@ -263,10 +248,9 @@ public sealed class Plugin : IDalamudPlugin
 
     private unsafe (bool, bool) IsEmptyArray()
     {
-        var addon = Svc.GameGui.GetAddonByName("EurekaMagiciteItemSynthesis");
-        if (addon == IntPtr.Zero)
-            return (false, false);
-        return (IsArrayEmpty((AtkUnitBase*)addon, 16), IsArrayEmpty((AtkUnitBase*)addon, 17));
+        if (GenericHelpers.TryGetAddonByName("EurekaMagiciteItemSynthesis", out AtkUnitBase* addon))
+            return (IsArrayEmpty(addon, 16), IsArrayEmpty(addon, 17));
+        return (false, false);
     }
 
     public (int, string) GetRecipeInfo(List<(uint id, int quantity)> recipe)
@@ -275,47 +259,17 @@ public sealed class Plugin : IDalamudPlugin
         var stockStrings = new List<string>();
         foreach (var (id, quantity) in recipe)
         {
-            if (!MagiciteItemStock.TryGetValue(id, out var stock))
-            {
-                stock = 0;
-                MagiciteItemStock.Add(id, 0);
-            }
+            var stock = MagiciteItemStock.GetOrCreate(id);
             total.Add(stock / quantity);
-            for (var j = 0; j < quantity; j++)
-            {
-                stockStrings.Add($"{MagiciteItems[id].Name}({stock})");
-            }
+            stockStrings.AddRange(Enumerable.Repeat($"{MagiciteItems[id].Name}({stock})", quantity));
         }
-        return (total.Min(), string.Join(" + ", stockStrings));
+        return (total.Min(), stockStrings.Join(" + "));
     }
 
     public int GetActionSetQuantity(List<(uint id, int quantity)>? recipe1, List<(uint id, int quantity)>? recipe2)
     {
-        var dict1 = recipe1?.ToDictionary();
-        var dict2 = recipe2?.ToDictionary();
-        var dict = dict1 ?? dict2;
-        if (dict == null)
-            return 0;
-        if (dict1 != null && dict2 != null)
-        {
-            foreach (var (id, quantity) in dict2)
-            {
-                if (dict.ContainsKey(id))
-                    dict[id] += quantity;
-                else
-                    dict[id] = quantity;
-            }
-        }
-        List<int> total = [200];
-        foreach (var (id, quantity) in dict)
-        {
-            if (!MagiciteItemStock.TryGetValue(id, out var stock))
-            {
-                stock = 0;
-                MagiciteItemStock.Add(id, 0);
-            }
-            total.Add(stock / quantity);
-        }
-        return total.Min();
+        var demand = new Dictionary<uint, int>();
+        (recipe2 is null ? recipe1 : recipe1?.Concat(recipe2))?.Each(item => demand.IncrementOrSet(item.id, item.quantity));
+        return demand.Count != 0 ? demand.Select(kv => MagiciteItemStock.GetOrCreate(kv.Key) / kv.Value).Min() : 0;
     }
 }

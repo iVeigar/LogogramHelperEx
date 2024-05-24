@@ -202,7 +202,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         EzTaskManager.Enqueue(() =>
         {
-            if (IsEmptyArray() is (_, true))
+            if (IsEmptyArray() is (true, _))
                 return;
             try
             {

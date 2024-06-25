@@ -269,7 +269,7 @@ public sealed class Plugin : IDalamudPlugin
     public int GetActionSetQuantity(List<(uint id, int quantity)>? recipe1, List<(uint id, int quantity)>? recipe2)
     {
         var demand = new Dictionary<uint, int>();
-        (recipe2 is null ? recipe1 : recipe1?.Concat(recipe2))?.Each(item => demand.IncrementOrSet(item.id, item.quantity));
+        (recipe1 ?? []).Concat(recipe2 ?? [])?.Each(item => demand.IncrementOrSet(item.id, item.quantity));
         return demand.Count != 0 ? demand.Select(kv => MagiciteItemStock.GetOrCreate(kv.Key) / kv.Value).Min() : 0;
     }
 }

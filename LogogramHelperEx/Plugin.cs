@@ -40,7 +40,7 @@ public sealed class Plugin : IDalamudPlugin
 
     internal Configuration Config;
 
-    public Plugin(DalamudPluginInterface pluginInterface)
+    public Plugin(IDalamudPluginInterface pluginInterface)
     {
         ECommonsMain.Init(pluginInterface, this);
         LoadData();
@@ -107,7 +107,7 @@ public sealed class Plugin : IDalamudPlugin
                 contentsName.Add(MagiciteItems[Id].Name);
             });
 
-            var arrayData = Framework.Instance()->GetUiModule()->GetRaptureAtkModule()->AtkModule.AtkArrayDataHolder;
+            var arrayData = Framework.Instance()->UIModule->GetRaptureAtkModule()->AtkModule.AtkArrayDataHolder;
             var stringArrayData = arrayData.StringArrays[26];
             var seStr = GetTooltipString(stringArrayData, 13);
             if (seStr == null) return;
@@ -127,11 +127,11 @@ public sealed class Plugin : IDalamudPlugin
 
     private unsafe void ObtainLogograms()
     {
-        var arrayData = Framework.Instance()->GetUiModule()->GetRaptureAtkModule()->AtkModule.AtkArrayDataHolder;
-        for (var i = 1; i <= arrayData.NumberArrays[135]->IntArray[0]; i++)
+        var arrayData = Framework.Instance()->UIModule->GetRaptureAtkModule()->AtkModule.AtkArrayDataHolder;
+        for (var i = 1; i <= arrayData.NumberArrays[136]->IntArray[0]; i++)
         {
-            var id = (uint)arrayData.NumberArrays[135]->IntArray[(4 * i) + 1];
-            var stock = arrayData.NumberArrays[135]->IntArray[4 * i];
+            var id = (uint)arrayData.NumberArrays[136]->IntArray[(4 * i) + 1];
+            var stock = arrayData.NumberArrays[136]->IntArray[4 * i];
             if (MagiciteItemStock.TryGetValue(id, out var oldValue))
             {
                 if (oldValue != stock)
@@ -151,8 +151,8 @@ public sealed class Plugin : IDalamudPlugin
         {
             var which = IsEmptyArray() switch
             {
-                (true, _) => 0,
-                (_, true) => 1,
+                (_, true) => 0,
+                (true, _) => 1,
                 _ => -1
             };
             if (which == -1) return;
@@ -202,7 +202,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         EzTaskManager.Enqueue(() =>
         {
-            if (IsEmptyArray() is (true, _))
+            if (IsEmptyArray() is (_, true))
                 return;
             try
             {
@@ -233,12 +233,12 @@ public sealed class Plugin : IDalamudPlugin
     private unsafe bool IsArrayEmpty(AtkUnitBase* addon, int arrayNodeIndex)
     {
         var arrayNode = addon->UldManager.NodeList[arrayNodeIndex];
-        if (!arrayNode->IsVisible)
+        if (!arrayNode->IsVisible())
             return false;
         var nodeList = arrayNode->GetComponent()->UldManager.NodeList;
         for (var i = 12; i >= 10; i--)
         {
-            if (nodeList[i]->IsVisible)
+            if (nodeList[i]->IsVisible())
             {
                 return false;
             }
@@ -249,7 +249,7 @@ public sealed class Plugin : IDalamudPlugin
     private unsafe (bool, bool) IsEmptyArray()
     {
         if (GenericHelpers.TryGetAddonByName("EurekaMagiciteItemSynthesis", out AtkUnitBase* addon))
-            return (IsArrayEmpty(addon, 16), IsArrayEmpty(addon, 17));
+            return (IsArrayEmpty(addon, 17), IsArrayEmpty(addon, 16));
         return (false, false);
     }
 

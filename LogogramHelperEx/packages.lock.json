@@ -16,7 +16,6 @@
       "clicklib": {
         "type": "Project",
         "dependencies": {
-          "ECommons": "[2.2.0.1, )",
           "Reloaded.Memory": "[7.1.0, )"
         }
       },

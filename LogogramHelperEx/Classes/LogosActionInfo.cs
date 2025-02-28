@@ -3,7 +3,7 @@ using System.Linq;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Utility;
 using ECommons.DalamudServices;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 
 namespace LogogramHelperEx;
 

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Utility;
 using ECommons.DalamudServices;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 
 namespace LogogramHelperEx.Classes;
 

@@ -127,22 +127,15 @@ public sealed class Plugin : IDalamudPlugin
 
     private unsafe void ObtainLogograms()
     {
+        Dictionary<uint, int> magiciteItemStock = [];
         var arrayData = Framework.Instance()->UIModule->GetRaptureAtkModule()->AtkModule.AtkArrayDataHolder;
         for (var i = 1; i <= arrayData.NumberArrays[136]->IntArray[0]; i++)
         {
-            var id = (uint)arrayData.NumberArrays[136]->IntArray[(4 * i) + 1];
             var stock = arrayData.NumberArrays[136]->IntArray[4 * i];
-            if (MagiciteItemStock.TryGetValue(id, out var oldValue))
-            {
-                if (oldValue != stock)
-                    MagiciteItemStock[id] = stock;
-            }
-            else
-            {
-                MagiciteItemStock.Add(id, stock);
-                continue;
-            }
+            var id = (uint)arrayData.NumberArrays[136]->IntArray[(4 * i) + 1];
+            magiciteItemStock[id] = stock;
         }
+        MagiciteItemStock = magiciteItemStock;
     }
 
     public unsafe void PutRecipe(List<(uint id, int quantity)> recipe)

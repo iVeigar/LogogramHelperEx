@@ -66,7 +66,6 @@ public sealed class Plugin : IDalamudPlugin
 
     private unsafe void DrawUI()
     {
-        WindowSystem.Draw();
         if (GenericHelpers.TryGetAddonByName("EurekaMagiciteItemShardList", out AtkUnitBase* addon) && addon != null)
         {
             if (!MainWindow.IsOpen)
@@ -81,6 +80,7 @@ public sealed class Plugin : IDalamudPlugin
             if (MainWindow.IsOpen) MainWindow.IsOpen = false;
             if (LogosWindow.IsOpen) LogosWindow.IsOpen = false;
         }
+        WindowSystem.Draw();
     }
 
     private void LoadData()

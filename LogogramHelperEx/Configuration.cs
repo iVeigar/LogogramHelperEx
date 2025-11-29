@@ -28,7 +28,7 @@ public class ActionSetGroup
     }
 }
 
-public class Configuration : IEzConfig, IPluginConfiguration
+public class Configuration : IPluginConfiguration
 {
     public void Save() => EzConfig.Save();
     public int Version { get; set; } = 1;

@@ -9,7 +9,7 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ECommons;
 using ECommons.ImGuiMethods;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using LogogramHelperEx.Util;
 
 namespace LogogramHelperEx.Windows;
@@ -58,7 +58,7 @@ public sealed class MainWindow : Window
         if (ImGuiComponents.IconButton("KoFi", FontAwesomeIcon.Coffee, new Vector4(1.0f, 0.35f, 0.37f, 1.0f)))
             Process.Start(new ProcessStartInfo { FileName = "https://ko-fi.com/apetih", UseShellExecute = true });
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("Support me on Ko-Fi");
+            ImGui.SetTooltip("支持原作者 on Ko-Fi");
 
         for (var i = 1; i <= 56; i++)
         {
@@ -68,7 +68,7 @@ public sealed class MainWindow : Window
             var tint = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
             if (!action.Name.Contains(filter, StringComparison.CurrentCultureIgnoreCase))
                 tint.W = 0.15f;
-            if (ImGui.ImageButton(texture.ImGuiHandle, ImGuiHelpers.ScaledVector2(40f), Vector2.Zero, Vector2.One, 2, new Vector4(0.0f, 0.0f, 0.0f, 1.0f), tint))
+            if (ImGui.ImageButton(texture.Handle, ImGuiHelpers.ScaledVector2(40f), Vector2.Zero, Vector2.One, 2, new Vector4(0.0f, 0.0f, 0.0f, 1.0f), tint))
                 Plugin.DrawLogosDetailUI(action);
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip($"{action.Name}");
@@ -132,34 +132,37 @@ public sealed class MainWindow : Window
             Plugin.Config.Save();
     }
 
-
     private bool DrawActionSetGroupTab(ActionSetGroup group)
     {
         var save = false;
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScaleSafe);
-        using (ImRaii.PushStyle(ImGuiStyleVar.CellPadding, ImGuiHelpers.ScaledVector2(4f, 10f)))
+        if (group.Sets.Count > 0)
         {
-            using (ImRaii.Table($"{group.Name}", 3, ImGuiTableFlags.RowBg | ImGuiTableFlags.Borders | ImGuiTableFlags.SizingStretchProp))
+            ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScaleSafe);
+            using (ImRaii.PushStyle(ImGuiStyleVar.CellPadding, ImGuiHelpers.ScaledVector2(4f, 10f)))
             {
-                ImGui.TableSetupColumn("图标", ImGuiTableColumnFlags.WidthFixed, 114f * ImGuiHelpers.GlobalScaleSafe);
-                ImGui.TableSetupColumn("编辑");
-                ImGui.TableSetupColumn("操作");
-                ImGui.TableNextColumn();
-                for (var i = 0; i < group.Sets.Count; i++)
+                using (ImRaii.Table($"{group.Name}", 3, ImGuiTableFlags.RowBg | ImGuiTableFlags.Borders | ImGuiTableFlags.SizingStretchProp))
                 {
-                    using (ImRaii.PushId(i))
+                    ImGui.TableSetupColumn("图标", ImGuiTableColumnFlags.WidthFixed, 114f * ImGuiHelpers.GlobalScaleSafe);
+                    ImGui.TableSetupColumn("编辑");
+                    ImGui.TableSetupColumn("操作");
+                    ImGui.TableNextColumn();
+                    for (var i = 0; i < group.Sets.Count; i++)
                     {
-                        save |= DrawActionSetRow(group.Sets, i);
-                    }
-                    if (i < group.Sets.Count - 1)
-                    {
-                        ImGui.TableNextColumn();
+                        using (ImRaii.PushId(i))
+                        {
+                            save |= DrawActionSetRow(group.Sets, i);
+                        }
+                        if (i < group.Sets.Count - 1)
+                        {
+                            ImGui.TableNextColumn();
+                        }
                     }
                 }
             }
+            ImGui.Separator();
         }
         ImGui.Spacing();
-        if (ImGui.Button("+", ImGuiHelpers.ScaledVector2(150.0f, 0.0f)))
+        if (ImGui.Button("添加新技能组", ImGuiHelpers.ScaledVector2(125.0f, 0.0f)))
         {
             group.Sets.Add(new());
             save = true;

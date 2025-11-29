@@ -3,7 +3,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ECommons;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using LogogramHelperEx.Util;
 
 namespace LogogramHelperEx.Windows;
@@ -46,12 +46,14 @@ public sealed class LogosWindow(Plugin plugin) : Window(
             }
         }
         ImGui.Spacing();
-        ImGuiHelpers.SafeTextWrapped($"{Action.Description}");
+        ImGui.TextWrapped($"{Action.Description}");
         ImGui.Spacing();
-        ImGui.Text("合成方式: (点击可一键放置)");
+        ImGui.Separator();
+        ImGui.Spacing();
+        ImGui.Text("合成方式: (点击可一键放置，不会自动提取记忆)");
         using (ImRaii.Child($"combinations{Action.Name}", new Vector2(0f, (ImGui.GetFontSize() + 5) * Action.Recipes.Count), false, ImGuiWindowFlags.NoScrollbar))
         {
-            ImGui.Columns(2, null, false);
+            ImGui.Columns(2, default, false);
             ImGui.SetColumnWidth(0, 40f * ImGuiHelpers.GlobalScaleSafe);
             ImGui.SetColumnWidth(1, 300f * ImGuiHelpers.GlobalScaleSafe);
             foreach (var recipe in Action.Recipes)

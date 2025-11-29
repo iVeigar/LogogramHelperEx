@@ -7,7 +7,7 @@ internal class Logogram
 {
     // key: Logogram id
     // value: MagiciteItem ids
-    public static Dictionary<ulong, List<uint>> Load()
+    public static Dictionary<uint, List<uint>> Load()
     {
         return new()
         {

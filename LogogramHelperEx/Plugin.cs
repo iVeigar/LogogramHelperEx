@@ -39,7 +39,6 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin(IDalamudPluginInterface pluginInterface)
     {
         ECommonsMain.Init(pluginInterface, this);
-        Callback.InstallHook();
 
         EzConfig.Migrate<Configuration>();
         Config = EzConfig.Init<Configuration>();
@@ -66,7 +65,6 @@ public sealed class Plugin : IDalamudPlugin
         Svc.AddonLifecycle.UnregisterListener(AddonEvent.PreRequestedUpdate, "ItemDetail", ItemDetailOnUpdate);
         Svc.AddonLifecycle.UnregisterListener(AddonEvent.PostRequestedUpdate, "EurekaMagiciteItemShardList", LogogramsStockOnUpdate);
         Svc.PluginInterface.UiBuilder.Draw -= DrawUI;
-        Callback.UninstallHook();
         ECommonsMain.Dispose();
     }
 

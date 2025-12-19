@@ -1,17 +1,25 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Dalamud.CN.NET.Sdk/13.1.0">
+<Project Sdk="Dalamud.CN.NET.Sdk/14.0.0">
     <PropertyGroup>
-        <Version>7.38.0.1</Version>
-        <LangVersion>preview</LangVersion>
         <Nullable>annotations</Nullable>
         <OutputPath>bin\$(Configuration)\</OutputPath>
+        <GenerateDependencyFile>false</GenerateDependencyFile>
+        <PackageVersion_Dalamud_NET_Sdk>14.0.1</PackageVersion_Dalamud_NET_Sdk>
+        <PackageVersion_DalamudPackager>14.0.1</PackageVersion_DalamudPackager>
+    </PropertyGroup>
+    <PropertyGroup>
+        <Version>7.40.0.0</Version>
+        <Author>apetih, iVeigar(汉化+增强)</Author>
+        <Name>Logogram Helper (汉化+增强版)</Name>
+        <Punchline>优雷卡文理技能合成助手</Punchline>
+        <Description>打开文理碎晶界面时展示文理技能的所有合成方式，并且可以一键将单个技能的指定配方或者自定义的技能组配方自动放入文理融合器。</Description>
+        <Tags>logograms;文理;Eureka;优雷卡</Tags>
+        <CategoryTags>utility</CategoryTags>
+        <RepoUrl>https://github.com/iVeigar/LogogramHelperEx</RepoUrl>
+        <IconUrl>https://raw.githubusercontent.com/iVeigar/LogogramHelperEx/master/res/img/logoslogo.png</IconUrl>
+        <AcceptsFeedback>true</AcceptsFeedback>
+        <Changelog>update api14</Changelog>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="ECommons" Version="3.0.1.28" />
-    </ItemGroup>
-    <ItemGroup>
-        <Content Include="LogogramHelperEx.json">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
+        <PackageReference Include="ECommons" Version="3.1.0.1" />
     </ItemGroup>
 </Project>
